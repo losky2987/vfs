@@ -1,33 +1,43 @@
-#简介
-    
+# 简介
 	这是一个通用的跨平台文件打包系统，目前支持LINUX和WINDOWS。  
     适用于发行软件或是服务器端对第三方提供布置环境时，对自己的文件资源进行打包管理进行加密的一项重要措施。  
     文件系统本身采用纯C语言开发，能适应各种项目和平台的平移。
-	
-#网址：
-1.[点击访问github](http://github.com/baickl/vfs)<br/>
-2.[点击访问oschina](http://git.oschina.net/baickl/vfs)<br/> 
+  原作者为：[baickl](https://github.com/baickl)  
+ 原作者仓库链接：  [github](https://github.com/baickl/vfs)  [~~oschina~~](https://git.oschina.net/baickl/vfs)  [gitee](https://gitee.com/baickl/vfs)  
+原作者可能是仙剑奇侠传四项目组成员，因其仓库内包含了仙剑四使用的xml组件
 
-#用法说明
-##第一步：
--------------------------------------------------------------------------------
+# 开发计划（接原作者）
+|目标|进度|  
+|---|---|
+|1）完成PAK模块读取 | OK |
+|2）完成PAK打包工具 | OK |
+|3）完成PAK示例程序 | OK |
+|4）完成PAK虚拟目录 | OK |
+|5）完成文件虚拟接口 | OK |
+|6）完成搜索文件速度的开发 | OK |
+|7）引入压缩解压插件式的开发工作 | OK |
+|8）引入HASHTABLE，加快文件定位 | OK |
+|9）完成加密模块的整合 | 0% |
+|10）引入内存管理机制 | 0% |
+|11）建立更强大的图形打包工具 | 0% |
+|12）加入异步加载模式 | 0% |
+|13）加入archive文件插件模块	| OK |
+|14）将项目转换为CMAKE项目，不再使用VS进行打包 | 0% |
+
+# 用法说明
   在程序初始化的时候调用 vfs_create,并指定程序的运行目录  
-    
-  代码如下：  
-  
-    if( VFS_FALSE == vfs_create(VFS_SDK_VERSION,"workpath") )  
-        return -1;  
 
-##第二步：  
--------------------------------------------------------------------------------
+  
+    if(VFS_FALSE == vfs_create(VFS_SDK_VERSION, "workpath")) {  
+        return -1;  
+    }
+  
   加入常用的包，如果包不存在也没有关系，不存在包的时候，会优先从同名的文件文件夹里读取文件数据   
-  当工作路径下的包不存在的时候，程序会认会这是开发模式，不会影响正常开发过程中资源频繁更换的问题。  
+  当工作路径下的包不存在的时候，程序会认会这是开发模式，不会影响正常开发过程中资源频繁更换的问题。   
   
-  代码如下：  
-  
-    vfs_add_archive("script.pak","");  
-    vfs_add_archive("effect.pak","");  
-    vfs_add_archive("a/b/c/scene.pak","");  
+    vfs_add_archive("script.pak", "");  
+    vfs_add_archive("effect.pak", "");  
+    vfs_add_archive("a/b/c/scene.pak", "");  
 
   以上接口调用主要用来模拟文件夹，举例说明一下.  
   比如说 当前目录架构是这样的  
@@ -41,11 +51,12 @@
   开发的时候，我们用相对路径来读取数据，例如script目录中有一个_init_.lua脚本,那么我们的读取函数为  
 
     struct vfs_stream *stream = vfs_stream_open("script/_init_.lua");
-	if( !stream )
+	if(!stream) {
 		return VFS_FALSE;
+    }
 
     /* 你的读取处理 */  
-	vfs_stream_read(stream,buf,size,count);
+	vfs_stream_read(stream, buf, size, count);
     
 	/* 关闭 */  
     vfs_stream_close(stream);  
@@ -57,8 +68,7 @@
   
   *记住：每个被打包的目录，在提测或是发行的时候，需要在原来目录的同级目录，不能变更，否则发行的程序将不能正确的读取数据  
 
-##第三步：
--------------------------------------------------------------------------------
+## 第三步：
   在程序中读取文件，我们只需要用相对目录就可以了  
 
   例如：a/b/c/scene原来有一个文件map0.scene  
@@ -66,11 +76,12 @@
   我们写读取代码就可以这样：
   
     struct vfs_stream *stream = vfs_stream_open("a/b/c/scene/map0.scene");
-	if( !stream )
+	if(!stream) {
 		return VFS_FALSE;
+    }
   
     /* 你的读取处理 */  
-	vfs_stream_read(stream,buf,size,count);
+	vfs_stream_read(stream, buf, size, count);
   
 	/* 关闭 */  
     vfs_stream_close(stream);  
@@ -95,29 +106,22 @@
    
   原来代码如下：  
   
-    vfs_add_archive("script.pak","");  
-    vfs_add_archive("effect.pak","");  
-    vfs_add_archive("a/b/c/scene.pak","");  
+    vfs_add_archive("script.pak", "");  
+    vfs_add_archive("effect.pak", "");  
+    vfs_add_archive("a/b/c/scene.pak", "");  
   
   改后代码如下：  
   
-    vfs_add_archive("script.pak","");  
-    vfs_add_archive("effect.pak","");  
-    vfs_add_archive("a.pak","");  
+    vfs_add_archive("script.pak", "");  
+    vfs_add_archive("effect.pak", "");  
+    vfs_add_archive("a.pak", "");  
   
   你的读取代码却不用做任何改变，这样即使调整目录结构，也可以很轻松随意了。  
   
   
-##第四步：  
--------------------------------------------------------------------------------
+## 第四步：  
   当程序退出的时候，我们需要调用相应的退出函数，以释放数据。  
   
-  在退出的地方加上如下代码即可：  
-    
-  代码如下：   
+  在退出的地方加上如下代码即可：     
   
     vfs_destroy();  
-
-
-
-
